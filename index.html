@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher PDF Assistant</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Teacher PDF Assistant</h1>
+    <input type="file" id="fileInput" accept=".pdf">
+    <button id="processBtn">Process PDF</button>
+
+    <div id="progressContainer" style="display: none;">
+        <label>Processing: <span id="progressLabel">0%</span></label>
+        <progress id="progressBar" value="0" max="100"></progress>
+    </div>
+
+    <h2>Summary</h2>
+    <div id="summary"></div>
+    <h2>Suggested Questions</h2>
+    <ul id="questions"></ul>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
