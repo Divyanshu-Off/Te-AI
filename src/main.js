@@ -1,8 +1,9 @@
-import './style.css'
-import { setupCounter } from './counter.js'
+import './style.css';
+import { setupCounter } from './counter.js';
 import { generateSummaryAndQuestions } from './counter.js';
+import * as pdfjsLib from 'pdfjs-dist';
 
-import { generateSummaryAndQuestions } from './counter.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 document.getElementById('processBtn').addEventListener('click', async () => {
     const fileInput = document.getElementById('fileInput');
@@ -11,6 +12,7 @@ document.getElementById('processBtn').addEventListener('click', async () => {
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressLabel = document.getElementById('progressLabel');
+    const loadingSpinner = document.getElementById('loadingSpinner');
 
     if (fileInput.files.length === 0) {
         alert('Please upload a PDF file first!');
@@ -21,8 +23,9 @@ document.getElementById('processBtn').addEventListener('click', async () => {
     summaryDiv.innerHTML = '';
     questionsList.innerHTML = '';
 
-    // Show progress bar
+    // Show progress bar and loading spinner
     progressContainer.style.display = 'block';
+    loadingSpinner.style.display = 'block';
     updateProgress(0); // Start at 0%
 
     const file = fileInput.files[0];
@@ -31,7 +34,8 @@ document.getElementById('processBtn').addEventListener('click', async () => {
     reader.onload = async function(event) {
         updateProgress(30); // Initial loading progress
 
-        const text = await extractTextFromPDF(event.target.result);
+        const arrayBuffer = event.target.result;
+        const text = await extractTextFromPDF(arrayBuffer);
         updateProgress(60); // Text extraction progress
 
         const { summary, questions } = generateSummaryAndQuestions(text);
@@ -46,19 +50,23 @@ document.getElementById('processBtn').addEventListener('click', async () => {
         updateProgress(100); // Finished
         setTimeout(() => {
             progressContainer.style.display = 'none'; // Hide progress bar after a short delay
+            loadingSpinner.style.display = 'none'; // Hide loading spinner
         }, 500);
     };
 
     reader.readAsArrayBuffer(file);
 });
 
-// Simulate PDF text extraction (replace this with real PDF parsing logic if needed)
+// Function to extract text from PDF using pdfjs-dist
 async function extractTextFromPDF(arrayBuffer) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve("This is sample text extracted from the PDF file.\nIt covers key topics for teachers.");
-        }, 1500); // Simulate a 1.5 second delay for text extraction
-    });
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ');
+    }
+    return text;
 }
 
 function updateProgress(value) {
@@ -68,5 +76,4 @@ function updateProgress(value) {
     progressLabel.textContent = value + '%';
 }
 
-
-setupCounter(document.querySelector('#counter'))
+setupCounter(document.querySelector('#counter'));
