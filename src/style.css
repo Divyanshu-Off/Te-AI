@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
   background-color: #f5f5f5;
@@ -7,119 +7,150 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  color: #333;
 }
 
 #app {
   background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   width: 90%;
-  max-width: 600px;
+  max-width: 700px;
+}
+
+h1 {
+  color: #2c3e50;
+  margin-top: 0;
   text-align: center;
 }
 
-h1, h2 {
-  color: #333;
+h2 {
+  color: #3498db;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+  margin-top: 25px;
+}
+
+.description {
+  text-align: center;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.upload-container {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.file-hint {
+  font-size: 13px;
+  color: #888;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 input[type="file"] {
   margin: 10px 0;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   border-radius: 5px;
   width: 100%;
   max-width: 300px;
+  background-color: white;
 }
 
 button {
-  background-color: #007bff;
+  background-color: #3498db;
   color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 12px 20px;
   cursor: pointer;
   margin: 10px 0;
   border-radius: 5px;
   font-size: 16px;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-#progressContainer {
-  margin: 15px 0;
-  width: 100%;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+.results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-progress {
-  width: 100%;
-  height: 20px;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-progress::-webkit-progress-bar {
-  background-color: #e0e0e0;
-  border-radius: 10px;
-}
-
-progress::-webkit-progress-value {
-  background-color: #007bff;
-  border-radius: 10px;
-  transition: width 0.3s ease;
-}
-
-progress::-moz-progress-bar {
-  background-color: #007bff;
-  border-radius: 10px;
-}
-
-#progressLabel {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: #555;
-}
-
-#summary, #questions {
-  background: #f0f0f0;
+.result-section {
+  background: #f9f9f9;
   padding: 15px;
-  margin-top: 15px;
-  border-radius: 5px;
-  text-align: left;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-ul {
+#summary {
+  line-height: 1.6;
+}
+
+#questions {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-ul li {
+.status-message {
+  text-align: center;
+  color: #3498db;
+  font-weight: 500;
+  margin: 10px 0;
+  min-height: 20px;
+}
+
+#questions li {
   margin-bottom: 10px;
-  padding: 10px;
+  padding: 12px;
   background: #fff;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid #3498db;
 }
 
 /* Loading spinner */
 .loading-spinner {
-  display: none;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #3498db;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   animation: spin 1s linear infinite;
-  margin: 20px auto;
+  margin: 25px auto;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #app {
+    padding: 15px;
+    width: 95%;
+  }
+  
+  .upload-container {
+    padding: 15px;
+  }
+  
+  button {
+    padding: 10px 15px;
+  }
 }

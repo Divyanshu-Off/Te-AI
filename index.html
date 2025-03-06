@@ -10,23 +10,32 @@
 <body>
   <div id="app">
     <h1>Teacher PDF Assistant</h1>
-    <input type="file" id="fileInput" accept=".pdf">
-    <button id="processBtn">Process PDF</button>
-
-    <!-- Progress Bar -->
-    <div id="progressContainer" style="display: none;">
-        <label>Processing: <span id="progressLabel">0%</span></label>
-        <progress id="progressBar" value="0" max="100"></progress>
+    <p class="description">Upload a PDF to get an AI-generated summary and teaching questions</p>
+    
+    <div class="upload-container">
+      <input type="file" id="fileInput" accept=".pdf">
+      <button id="processBtn">Process PDF</button>
+      <p class="file-hint">Max recommended size: 10MB</p>
     </div>
+
+    <!-- Status Message -->
+    <p id="statusMessage" class="status-message"></p>
 
     <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;"></div>
 
     <!-- Summary and Questions -->
-    <h2>Summary</h2>
-    <div id="summary"></div>
-    <h2>Suggested Questions</h2>
-    <ul id="questions"></ul>
+    <div class="results-container">
+      <div class="result-section">
+        <h2>Summary</h2>
+        <div id="summary"></div>
+      </div>
+      
+      <div class="result-section">
+        <h2>Suggested Questions</h2>
+        <ul id="questions"></ul>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

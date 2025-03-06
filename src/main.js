@@ -1,18 +1,11 @@
 import './style.css';
-import { setupCounter } from './counter.js';
-import { generateSummaryAndQuestions } from './counter.js';
-import * as pdfjsLib from 'pdfjs-dist';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 document.getElementById('processBtn').addEventListener('click', async () => {
     const fileInput = document.getElementById('fileInput');
     const summaryDiv = document.getElementById('summary');
     const questionsList = document.getElementById('questions');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const progressLabel = document.getElementById('progressLabel');
     const loadingSpinner = document.getElementById('loadingSpinner');
+    const statusMessage = document.getElementById('statusMessage');
 
     if (fileInput.files.length === 0) {
         alert('Please upload a PDF file first!');
@@ -22,58 +15,101 @@ document.getElementById('processBtn').addEventListener('click', async () => {
     // Reset UI
     summaryDiv.innerHTML = '';
     questionsList.innerHTML = '';
+    updateStatus('Starting to process PDF...');
 
-    // Show progress bar and loading spinner
-    progressContainer.style.display = 'block';
+    // Show loading spinner
     loadingSpinner.style.display = 'block';
-    updateProgress(0); // Start at 0%
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(event) {
-        updateProgress(30); // Initial loading progress
-
-        const arrayBuffer = event.target.result;
-        const text = await extractTextFromPDF(arrayBuffer);
-        updateProgress(60); // Text extraction progress
-
-        const { summary, questions } = generateSummaryAndQuestions(text);
-        updateProgress(90); // Almost done
-
+    
+    try {
+        const file = fileInput.files[0];
+        
+        // Check file size and warn if too large
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+            if (!confirm('This file is large and may take longer to process. Continue?')) {
+                loadingSpinner.style.display = 'none';
+                summaryDiv.innerHTML = '';
+                updateStatus('');
+                return;
+            }
+        }
+        
+        updateStatus('Reading file...');
+        
+        // Read file as base64
+        const base64Data = await readFileAsBase64(file);
+        updateStatus('Uploading PDF for server-side processing...');
+        
+        // Send PDF to server for processing
+        const result = await sendPDFToBackend(base64Data);
+        
+        // Show extraction method if available
+        if (result.extraction_method) {
+            updateStatus(`PDF processed using: ${result.extraction_method}`);
+            setTimeout(() => updateStatus(''), 5000);
+        } else {
+            updateStatus('');
+        }
+        
         // Show Summary
-        summaryDiv.innerHTML = summary.split('\n').map(line => `<p>${line}</p>`).join('');
+        summaryDiv.innerHTML = `<p>${result.summary}</p>`;
 
         // Show Questions
-        questionsList.innerHTML = questions.map(q => `<li>${q}</li>`).join('');
+        questionsList.innerHTML = result.questions
+            .filter(q => q && q.trim().length > 0) // Filter out empty questions
+            .map(q => `<li>${q}</li>`)
+            .join('');
 
-        updateProgress(100); // Finished
-        setTimeout(() => {
-            progressContainer.style.display = 'none'; // Hide progress bar after a short delay
-            loadingSpinner.style.display = 'none'; // Hide loading spinner
-        }, 500);
-    };
-
-    reader.readAsArrayBuffer(file);
+    } catch (error) {
+        console.error('Error processing PDF:', error);
+        summaryDiv.innerHTML = `<p>Error processing PDF: ${error.message || 'Unknown error'}</p>`;
+        questionsList.innerHTML = '';
+        updateStatus('');
+    } finally {
+        loadingSpinner.style.display = 'none';
+    }
 });
 
-// Function to extract text from PDF using pdfjs-dist
-async function extractTextFromPDF(arrayBuffer) {
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let text = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ');
+// Helper function to update status message
+function updateStatus(message) {
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage) {
+        statusMessage.textContent = message;
     }
-    return text;
 }
 
-function updateProgress(value) {
-    const progressBar = document.getElementById('progressBar');
-    const progressLabel = document.getElementById('progressLabel');
-    progressBar.value = value;
-    progressLabel.textContent = value + '%';
+// Read file as base64
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64String = reader.result;
+            resolve(base64String);
+        };
+        reader.onerror = (error) => reject(new Error(`File reading failed: ${error.message}`));
+        reader.readAsDataURL(file);
+    });
 }
 
-setupCounter(document.querySelector('#counter'));
+// Send PDF to backend
+async function sendPDFToBackend(base64Data) {
+    try {
+        const response = await fetch('http://localhost:5000/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pdf_base64: base64Data }),
+            signal: AbortSignal.timeout(120000) // 2 minute timeout (OCR can take time)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Server responded with ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Backend processing error:', error);
+        throw error;
+    }
+}
