@@ -1,13 +1,15 @@
-from groq import Groq
+import os
 import json
-import os 
+import google.generativeai as genai
 
-# Initialize Groq client
-client = Groq(api_key="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")
+# Set up the Gemini API with your API key
+# Get your API key from https://aistudio.google.com/app/apikey
+api_key = os.getenv("GEMINI_API_KEY", "AIzaSyAR5kutKEA1rScW34QZZEHj1NIIeD8SiQM")
+genai.configure(api_key=api_key)
 
 def generate_summary_and_questions(text, max_chunk_size=8000):
     """
-    Generate summary and questions from text using a faster model and combined prompt.
+    Generate summary and questions from text using Google's Gemini API.
     
     Args:
         text (str): The text to process
@@ -16,7 +18,6 @@ def generate_summary_and_questions(text, max_chunk_size=8000):
     Returns:
         dict: Dictionary containing summary and questions
     """
-    # Process text in chunks if it's too large
     if len(text) > max_chunk_size:
         chunks = chunk_text(text, max_chunk_size)
         all_results = []
@@ -25,13 +26,11 @@ def generate_summary_and_questions(text, max_chunk_size=8000):
             result = process_chunk(chunk)
             all_results.append(result)
         
-        # Combine results from all chunks
         combined_summary = " ".join([r["summary"] for r in all_results])
         combined_questions = []
         for r in all_results:
             combined_questions.extend(r["questions"][:2])  # Take top 2 questions from each chunk
         
-        # Ensure we have exactly 5 questions total
         combined_questions = combined_questions[:5]
         
         return {"summary": combined_summary, "questions": combined_questions}
@@ -39,8 +38,7 @@ def generate_summary_and_questions(text, max_chunk_size=8000):
         return process_chunk(text)
 
 def process_chunk(text):
-    """Process a single chunk of text"""
-    # Combined prompt for both summary and questions to reduce API calls
+    """Process a single chunk of text using Gemini 1.5 Flash API"""
     combined_prompt = f"""
     Based on the following text, provide:
     1. A concise summary (max 150 words)
@@ -54,31 +52,52 @@ def process_chunk(text):
         "summary": "your summary here",
         "questions": ["Q1", "Q2", "Q3", "Q4", "Q5"]
     }}
+    
+    IMPORTANT: Only respond with valid JSON.
     """
     
-    # Using a faster model (llama3-70b-8192) with higher temperature for creativity in questions
-    response = client.chat.completions.create(
-        model="llama3-70b-8192",  # Faster and more capable model
-        messages=[{"role": "user", "content": combined_prompt}],
-        temperature=0.7,  # Add some creativity for questions
-        max_tokens=500,
-        response_format={"type": "json_object"}  # Request JSON formatted response
-    )
-    
-    result_text = response.choices[0].message.content
-    
     try:
-        # Parse the JSON response
-        result = json.loads(result_text)
-        # Ensure we have both keys
-        if "summary" not in result or "questions" not in result:
-            raise ValueError("Missing required keys in response")
-        return result
-    except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
-        summary = "Summary extraction failed. Please try again with a smaller document."
-        questions = ["Could not generate questions from this text."]
-        return {"summary": summary, "questions": questions}
+        # Use Gemini 1.5 Flash model
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        
+        response = model.generate_content(combined_prompt)
+        
+        result_text = response.text
+        
+        try:
+            if "```json" in result_text:
+                json_content = result_text.split("```json")[1].split("```")[0].strip()
+                result = json.loads(json_content)
+            elif "```" in result_text:
+                json_content = result_text.split("```")[1].split("```")[0].strip()
+                result = json.loads(json_content)
+            else:
+                result = json.loads(result_text)
+                
+            if "summary" not in result or "questions" not in result:
+                raise ValueError("Missing required keys in response")
+                
+            if not isinstance(result["questions"], list):
+                result["questions"] = [str(result["questions"])]
+                
+            while len(result["questions"]) < 5:
+                result["questions"].append(f"Additional question {len(result['questions']) + 1}?")
+                
+            result["questions"] = result["questions"][:5]
+                
+            return result
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Error parsing response: {str(e)}")
+            print(f"Raw response: {result_text}")
+            summary = "Summary extraction failed due to formatting issues."
+            questions = ["Could not generate structured questions from this text."]
+            return {"summary": summary, "questions": questions}
+    except Exception as e:
+        print(f"Error calling Gemini API: {str(e)}")
+        return {
+            "summary": f"API error: {str(e)}", 
+            "questions": ["API error occurred. Please check your API key and try again."]
+        }
 
 def chunk_text(text, max_size=8000):
     """Split text into chunks of maximum size while trying to preserve paragraphs"""
@@ -91,12 +110,9 @@ def chunk_text(text, max_size=8000):
         if len(current_chunk) + len(paragraph) <= max_size:
             current_chunk += paragraph + '\n\n'
         else:
-            # If current paragraph would exceed max size, add current chunk to results
             if current_chunk:
                 chunks.append(current_chunk.strip())
             
-            # Start new chunk with current paragraph
-            # If paragraph itself is too large, split by sentences
             if len(paragraph) > max_size:
                 sentences = paragraph.split('. ')
                 current_chunk = ""
@@ -110,13 +126,12 @@ def chunk_text(text, max_size=8000):
             else:
                 current_chunk = paragraph + '\n\n'
     
-    # Add the last chunk if it's not empty
     if current_chunk:
         chunks.append(current_chunk.strip())
     
     return chunks
 
-# Example usage (for testing)
+# Example usage
 if __name__ == "__main__":
     sample_text = "This is a sample text about teaching methods. Teachers can use this to improve their classroom techniques."
     result = generate_summary_and_questions(sample_text)
