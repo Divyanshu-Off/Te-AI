@@ -4,7 +4,7 @@ import google.generativeai as genai
 
 # Set up the Gemini API with your API key
 # Get your API key from https://aistudio.google.com/app/apikey
-api_key = os.getenv("GEMINI_API_KEY", "AIzaSyAR5kutKEA1rScW34QZZEHj1NIIeD8SiQM")
+api_key = os.getenv("GEMINI_API_KEY", "Your_API_Key")
 genai.configure(api_key=api_key)
 
 def generate_summary_and_questions(text, max_chunk_size=8000):
