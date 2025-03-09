@@ -39,7 +39,7 @@ The backend relies on the following Python packages:
 - `fastapi` - For the backend API
 - `uvicorn` - To run the FastAPI server
 - `PyMuPDF` - For PDF processing
-- `DeepSeek` - AI model for summarization and quiz generation
+- `Gemini` - AI model for summarization and quiz generation
 - `requests` - To handle HTTP requests
 - `numpy` - Useful for AI-related operations
 - `pydantic` - Data validation and settings management
