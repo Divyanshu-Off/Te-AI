@@ -4,7 +4,7 @@ A web-based AI project that summarizes PDFs and generates quizzes to help teache
 
 ## Features
 
-- **PDF Summarization**: Extracts key points from PDFs for quick reference.
+- **PDF Summarization**: Extracts key points that are important from PDFs for quick reference.
 - **Quiz Generation**: Automatically creates quizzes based on study material.
 - **User-Friendly Interface**: Simple and interactive design for ease of use.
 - **Free & Open-Source**: Built to help educators without any cost barriers.
